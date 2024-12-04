@@ -1,0 +1,25 @@
+Outputs:
+  StackSSHSecurityGroupOut:
+    Description: Security group without open internet ports
+    Value: !Ref StackSSHSecurityGroup
+    Export:
+      Name: SSHSecurityGroup
+
+Resources:
+  StackSSHSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Ingress - Stack SSH"
+      SecurityGroupIngress:
+      - CidrIp: 10.0.48.0/24
+        FromPort: 22
+        IpProtocol: tcp
+        ToPort: 22
+      - CidrIp: 10.0.112.0/24
+        FromPort: 22
+        IpProtocol: tcp
+        ToPort: 22
+      - CidrIp: 10.0.176.0/24
+        FromPort: 22
+        IpProtocol: tcp
+        ToPort: 22

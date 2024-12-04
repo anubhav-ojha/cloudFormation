@@ -1,0 +1,54 @@
+Parameters:
+  # This parameter specifies the AMI ID for the EC2 instance. It uses AWS SSM Parameter Store
+  # to dynamically retrieve the latest Amazon Linux 2 AMI ID.
+  ImageId:  
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+  # This parameter defines the environment type for the stack, which can either be "test" or "prod".
+  # The environment type controls conditional resource creation (e.g., EBS volume for production only).
+  EnvType:
+    Description: Select the environment type of the stack
+    Type: String
+    Default: test
+    AllowedValues:
+      - prod  # Production environment
+      - test  # Test environment
+    ConstraintDescription: must be development or production  
+
+Conditions:
+  # Condition to check if the environment type is "prod".
+  # This will be used to conditionally create resources specific to the production environment.
+  CreateProdResources: !Equals [!Ref EnvType, prod]
+
+Resources:
+  # This resource creates an EC2 instance using the AMI ID specified in the ImageId parameter.
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId  # Use the specified AMI ID for the EC2 instance
+
+  # This resource creates an EBS volume with a size of 1 GiB in the same availability zone as the EC2 instance.
+  # The volume is created only in the production environment (condition: CreateProdResources).
+  NewVolume:
+    Type: AWS::EC2::Volume
+    Condition: CreateProdResources  # Only create this volume in "prod" environment
+    Properties:
+      Size: 1  # Size of the volume in GiB
+      AvailabilityZone: !GetAtt EC2Instance.AvailabilityZone  # Matches the EC2 instance's availability zone
+
+  # This resource attaches the EBS volume to the EC2 instance.
+  # The attachment occurs only in the production environment (condition: CreateProdResources).
+  MountPoint:
+    Type: AWS::EC2::VolumeAttachment
+    Condition: CreateProdResources  # Only attach the volume in "prod" environment
+    Properties:
+      InstanceId: !Ref EC2Instance  # Reference to the EC2 instance
+      VolumeId: !Ref NewVolume      # Reference to the newly created EBS volume
+      Device: /dev/sdh             # Specifies the device name for the volume
+
+Outputs:
+  # Outputs the ID of the created EBS volume. This output is only available in the production environment.
+  VolumeId:
+    Condition: CreateProdResources  # Output only if the volume is created
+    Value: !Ref NewVolume  # Reference to the volume ID

@@ -1,0 +1,5 @@
+Resources:
+  MyS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub its-random-create-a-nubhab-ojha

@@ -1,0 +1,29 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  LatestAmiId:
+    Description: The latest Amazon Linux 2 AMI from the Parameter Store
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+  EnvironmentType: 
+    Description: The environment type (Dev or Prod)
+    Type: String
+    Default: Dev
+    AllowedValues: 
+      - Dev
+      - Prod
+Mappings: 
+  SecurityGroupMap: 
+    us-east-1: 
+      Dev: "sg-12345678"
+      Prod: "sg-abcdef01"
+    us-west-2: 
+      Dev: "sg-ghijkl23"
+      Prod: "sg-45678abc"
+Resources:
+  Ec2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: t2.micro
+      SecurityGroupIds:
+        - !FindInMap [SecurityGroupMap, !Ref "AWS::Region", !Ref EnvironmentType]
